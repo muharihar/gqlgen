@@ -9,10 +9,16 @@ type Query {
     shapes: [Shape]
     errorBubble: Error
     valid: String!
+    user(id: Int!): User!
 }
 
 type Subscription {
     updated: String!
+}
+
+type User {
+    id: Int!
+    friends: [User!]!
 }
 
 type Error {
