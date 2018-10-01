@@ -147,7 +147,7 @@ func TestGeneratedServer(t *testing.T) {
 		}
 		err := c.Post(`query { nullableArg(arg: null) }`, &resp)
 		require.Nil(t, err)
-		require.Nil(t, resp.NullableArg)
+		require.Equal(t, "Ok", *resp.NullableArg)
 	})
 }
 
@@ -189,6 +189,11 @@ func (r *testQueryResolver) ErrorBubble(ctx context.Context) (*Error, error) {
 
 func (r *testQueryResolver) Valid(ctx context.Context) (string, error) {
 	return "Ok", nil
+}
+
+func (r *testQueryResolver) NullableArg(ctx context.Context, arg *int) (*string, error) {
+	s := "Ok"
+	return &s, nil
 }
 
 func (r *testResolver) Subscription() SubscriptionResolver {

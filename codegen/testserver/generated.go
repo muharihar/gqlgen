@@ -85,7 +85,7 @@ type ComplexityRoot struct {
 		Shapes            func(childComplexity int) int
 		ErrorBubble       func(childComplexity int) int
 		Valid             func(childComplexity int) int
-		NullableArg       func(childComplexity int, arg int) int
+		NullableArg       func(childComplexity int, arg *int) int
 		KeywordArgs       func(childComplexity int, breakArg string, defaultArg string, funcArg string, interfaceArg string, selectArg string, caseArg string, deferArg string, goArg string, mapArg string, structArg string, chanArg string, elseArg string, gotoArg string, packageArg string, switchArg string, constArg string, fallthroughArg string, ifArg string, rangeArg string, typeArg string, continueArg string, forArg string, importArg string, returnArg string, varArg string) int
 	}
 
@@ -115,7 +115,7 @@ type QueryResolver interface {
 	Shapes(ctx context.Context) ([]*Shape, error)
 	ErrorBubble(ctx context.Context) (*Error, error)
 	Valid(ctx context.Context) (string, error)
-	NullableArg(ctx context.Context, arg int) (*string, error)
+	NullableArg(ctx context.Context, arg *int) (*string, error)
 	KeywordArgs(ctx context.Context, breakArg string, defaultArg string, funcArg string, interfaceArg string, selectArg string, caseArg string, deferArg string, goArg string, mapArg string, structArg string, chanArg string, elseArg string, gotoArg string, packageArg string, switchArg string, constArg string, fallthroughArg string, ifArg string, rangeArg string, typeArg string, continueArg string, forArg string, importArg string, returnArg string, varArg string) (bool, error)
 }
 type SubscriptionResolver interface {
@@ -226,10 +226,15 @@ func field_Query_keywords_args(rawArgs map[string]interface{}) (map[string]inter
 
 func field_Query_nullableArg_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
-	var arg0 int
+	var arg0 *int
 	if tmp, ok := rawArgs["arg"]; ok {
 		var err error
-		arg0, err = graphql.UnmarshalInt(tmp)
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg0 = &ptr1
+		}
+
 		if err != nil {
 			return nil, err
 		}
@@ -705,7 +710,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.NullableArg(childComplexity, args["arg"].(int)), true
+		return e.complexity.Query.NullableArg(childComplexity, args["arg"].(*int)), true
 
 	case "Query.keywordArgs":
 		if e.complexity.Query.KeywordArgs == nil {
@@ -1764,7 +1769,7 @@ func (ec *executionContext) _Query_nullableArg(ctx context.Context, field graphq
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(ctx context.Context) (interface{}, error) {
-		return ec.resolvers.Query().NullableArg(ctx, args["arg"].(int))
+		return ec.resolvers.Query().NullableArg(ctx, args["arg"].(*int))
 	})
 	if resTmp == nil {
 		return graphql.Null
