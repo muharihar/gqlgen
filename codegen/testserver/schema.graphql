@@ -9,6 +9,7 @@ type Query {
     shapes: [Shape]
     errorBubble: Error
     valid: String!
+    nullableArg(arg: Int = 123): String
 }
 
 type Subscription {

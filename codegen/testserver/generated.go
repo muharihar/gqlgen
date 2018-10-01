@@ -85,6 +85,7 @@ type ComplexityRoot struct {
 		Shapes            func(childComplexity int) int
 		ErrorBubble       func(childComplexity int) int
 		Valid             func(childComplexity int) int
+		NullableArg       func(childComplexity int, arg int) int
 		KeywordArgs       func(childComplexity int, breakArg string, defaultArg string, funcArg string, interfaceArg string, selectArg string, caseArg string, deferArg string, goArg string, mapArg string, structArg string, chanArg string, elseArg string, gotoArg string, packageArg string, switchArg string, constArg string, fallthroughArg string, ifArg string, rangeArg string, typeArg string, continueArg string, forArg string, importArg string, returnArg string, varArg string) int
 	}
 
@@ -114,6 +115,7 @@ type QueryResolver interface {
 	Shapes(ctx context.Context) ([]*Shape, error)
 	ErrorBubble(ctx context.Context) (*Error, error)
 	Valid(ctx context.Context) (string, error)
+	NullableArg(ctx context.Context, arg int) (*string, error)
 	KeywordArgs(ctx context.Context, breakArg string, defaultArg string, funcArg string, interfaceArg string, selectArg string, caseArg string, deferArg string, goArg string, mapArg string, structArg string, chanArg string, elseArg string, gotoArg string, packageArg string, switchArg string, constArg string, fallthroughArg string, ifArg string, rangeArg string, typeArg string, continueArg string, forArg string, importArg string, returnArg string, varArg string) (bool, error)
 }
 type SubscriptionResolver interface {
@@ -218,6 +220,21 @@ func field_Query_keywords_args(rawArgs map[string]interface{}) (map[string]inter
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Query_nullableArg_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["arg"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["arg"] = arg0
 	return args, nil
 
 }
@@ -677,6 +694,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Valid(childComplexity), true
+
+	case "Query.nullableArg":
+		if e.complexity.Query.NullableArg == nil {
+			break
+		}
+
+		args, err := field_Query_nullableArg_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NullableArg(childComplexity, args["arg"].(int)), true
 
 	case "Query.keywordArgs":
 		if e.complexity.Query.KeywordArgs == nil {
@@ -1338,6 +1367,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				wg.Done()
 			}(i, field)
+		case "nullableArg":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_nullableArg(ctx, field)
+				wg.Done()
+			}(i, field)
 		case "keywordArgs":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -1712,6 +1747,35 @@ func (ec *executionContext) _Query_valid(ctx context.Context, field graphql.Coll
 	res := resTmp.(string)
 	rctx.Result = res
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_nullableArg(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_nullableArg_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Query().NullableArg(ctx, args["arg"].(int))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 // nolint: vetshadow
@@ -3512,6 +3576,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
     shapes: [Shape]
     errorBubble: Error
     valid: String!
+    nullableArg(arg: Int = 123): String
 }
 
 type Subscription {
